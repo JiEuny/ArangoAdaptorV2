@@ -17,10 +17,31 @@ const entityEdge = db.edgeCollection('entityEdge');
 const propertyColl = db.collection('propertyColl');
 const propertyEdge = db.edgeCollection('propertyEdge');
 
-entityColl.create();
-entityEdge.create();
-propertyColl.create();
-propertyEdge.create();
+collectionSetup();
+
+async function collectionSetup() {
+ const entityCollExist = await entityColl.exists();
+ const entityEdgeExist = await entityEdge.exists();
+ const propertyCollExist = await propertyColl.exists();
+ const propertyEdgeExist = await propertyEdge.exists();
+
+ if(entityCollExist != true) {
+   entityColl.create();
+ }
+
+ if(entityEdgeExist != true) {
+   entityEdge.create();
+ }
+
+ if (propertyCollExist != true) {
+   propertyColl.create();
+ }
+
+ if (propertyEdgeExist != true) {
+   propertyEdge.create();
+ }
+
+}
 
 var http = require('http');
 var options = {
