@@ -4,11 +4,23 @@ var express = require('express');
 var router = express.Router();
 
 var arangojs = require("arangojs");
-var db = new arangojs.Database();
+const db = new arangojs.Database();
 const aql = arangojs.aql;
 
 db.useDatabase("_system");
 db.useBasicAuth("root", "0000");
+
+const service = db.route("/ngsi");
+
+const entityColl = db.collection('entityColl');
+const entityEdge = db.edgeCollection('entityEdge');
+const propertyColl = db.collection('propertyColl');
+const propertyEdge = db.edgeCollection('propertyEdge');
+
+entityColl.create();
+entityEdge.create();
+propertyColl.create();
+propertyEdge.create();
 
 var http = require('http');
 var options = {
@@ -19,7 +31,7 @@ var options = {
 function storeEntity(bodies) {
   for(const body of bodies) {
     db.query(aql`
-    INSERT ${body} INTO 'entityColl'
+    INSERT ${body} INTO ${entityColl}
     RETURN NEW
   `).then(function (cursor) {
       // console.log(cursor._result);
@@ -36,7 +48,7 @@ function storeEdge(body, key, entityID) {
     let objectID = body[key].object;
     // console.log(body[key]);
     db.query(aql`
-      FOR doc IN entityColl
+      FOR doc IN ${entityColl}
         FILTER doc.id == ${objectID}
       RETURN doc._id
      `).then(function (cursor) {
@@ -44,7 +56,7 @@ function storeEdge(body, key, entityID) {
       console.log(body[key]);
       let rel = body[key];
       db.query(aql`
-        INSERT ${rel} INTO 'entityEdge'
+        INSERT ${rel} INTO ${entityEdge}
        `).then(function (cursor) {
 
       })
@@ -70,10 +82,10 @@ function storeProperty(bodies) {
         body[key].id = key;
         // console.log(entityID);
         db.query(aql`
-          INSERT ${body[key]} INTO 'propertyColl'
+          INSERT ${body[key]} INTO ${propertyColl}
           let property = NEW
           
-          INSERT { _from: ${entityID}, _to: NEW._id } INTO 'propertyEdge'
+          INSERT { _from: ${entityID}, _to: NEW._id } INTO ${propertyEdge}
           
           RETURN property
         `).then(function (cursor) {
@@ -111,6 +123,16 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 
   //console.log(cursor[Symbol.toStringTag]._result);
+
+});
+
+// get data by api of services
+router.get("/get", async function (req, res) {
+  const response = await service.get("/relationship");
+  res.status(response.statusCode);
+  res.write(response.body[0].toString());
+  console.log(response.body);
+  res.end();
 
 });
 
