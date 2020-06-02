@@ -99,7 +99,7 @@ function storeProperty(bodies) {
       //store edge
       storeEdge(body, key, entityID);
 
-      if (body[key].type == "Property") {
+      if (body[key].type == "Property" || body[key].type == "GeoProperty") {
         body[key].id = key;
         // console.log(entityID);
         db.query(aql`
